@@ -58,21 +58,25 @@ source distribution.
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 
+#include "TerrainChunk.hpp"
+#include "TerrainRenderer.hpp"
 
 WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     : xy::State(stack, ctx),
     m_scene(ctx.appInstance.getMessageBus()),
     m_textures()
 {
+    
     // Load the player spritesheet
     auto& sheet = m_textures.get("assets/spritesheets/roguelikeChar_transparent.png");
 
+    m_scene.addSystem<TerrainRenderer>(ctx.appInstance.getMessageBus(), m_scene);
     m_scene.addSystem<xy::SpriteRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::CameraSystem>(ctx.appInstance.getMessageBus());
 
     // Player entity
     m_player = m_scene.createEntity();
-    m_player.addComponent<xy::Transform>().setPosition(ctx.defaultView.getCenter());
+    m_player.addComponent<xy::Transform>();
     m_player.addComponent<xy::Sprite>().setTexture(sheet);
     m_player.getComponent<xy::Sprite>().setTextureRect({ 0, 0, 16, 16 });
     m_player.addComponent<xy::Camera>().setZoom(5.f);
@@ -84,7 +88,7 @@ bool WorldState::handleEvent(const sf::Event& evt)
 {
     m_scene.forwardEvent(evt);
 
-    float speed(10.f);
+    float speed(16.f);
 
     if (evt.type == sf::Event::KeyPressed)
     {
@@ -111,6 +115,19 @@ bool WorldState::handleEvent(const sf::Event& evt)
         std::string newPos = "x=" + std::to_string(pos.x) + ", y=" + std::to_string(pos.y);
         xy::Logger::log("New position: " + newPos, xy::Logger::Type::Info);
     }
+    else if (evt.type == sf::Event::MouseWheelScrolled)
+    {
+        auto scroll = evt.mouseWheelScroll.delta;
+        auto& cam = m_scene.getActiveCamera().getComponent<xy::Camera>();
+        if (scroll > 0)
+        {
+            cam.setZoom(1.1);
+        }
+        else
+        {
+            cam.setZoom(0.9);
+        }
+    }
     return false;
 }
 
@@ -123,7 +140,6 @@ bool WorldState::update(float dt)
 {
     xy::NetEvent evt;
     m_scene.update(dt);
-    m_scene.getActiveCamera();
     return false;
 }
 

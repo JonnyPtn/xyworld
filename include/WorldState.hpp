@@ -7,6 +7,8 @@
 
 #include "States.hpp"
 
+#include "FastNoise.h"
+
 class WorldState final : public xy::State
 {
 public:
