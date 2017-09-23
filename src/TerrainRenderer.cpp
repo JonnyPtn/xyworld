@@ -119,34 +119,76 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
 
     sf::VertexArray verts(sf::PrimitiveType::Quads);
 
-    for (int x(0); x < ChunkSize; x++)
+    for (int y(0); y < ChunkSize; y++)
     {
-        for (int y(0); y < ChunkSize; y++)
+        for (int x(0); x < ChunkSize; x++)
         {
-                // hardcoded texcoords for now
-                sf::Vector2f texPos(51, 17);
-                switch (chunk.data[x*ChunkSize + y])
+                auto i = y * ChunkSize + x;
+                // Vague hacky marching squares?
+                uint8_t index(0);
+                
+                // Top left
+                index |= chunk.data[i].height > SeaLevel ? 1 : 0;
+                index <<= 1;
+
+                // Top Right
+                if ((i + 1) % ChunkSize)
+                    index |= chunk.data[i + 1].height > SeaLevel ? 1 : 0;
+                else
                 {
-                case 1:
-                    texPos = { 136,17 }; // sand
-                    break;
-
-                case 2:
-                    texPos = { 85, 17 }; // grass
-                    break;
-
-                case 3:
-                    texPos = { 765,442 }; // snow
-                    break;
-
-                default:
-                    texPos = { 51,17 }; // sea
-                    break;
+                    auto chunkId = chunk.getIndex();
+                    index |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x + 1, chunkId.y* ChunkSize + y) > SeaLevel ? 1 : 0;
                 }
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texPos }); // top left
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize }, {texPos.x + TileSize, texPos.y} }); // top right
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },{texPos.x + TileSize, texPos.y + TileSize} }); // bottom right
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + TileSize } }); // bottom left
+                index <<= 1;
+
+                // Bottom Right
+                if ((i + 1) % ChunkSize && i < TileCount - ChunkSize)
+                    index |= chunk.data[i + 1 + ChunkSize].height > SeaLevel ? 1 : 0;
+                else
+                {
+                    auto chunkId = chunk.getIndex();
+                    index |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x + 1, chunkId.y* ChunkSize + y + 1) > SeaLevel ? 1 : 0;
+                }
+                index <<= 1;
+
+                // Bottom Left
+                if (i + ChunkSize < TileCount)
+                    index |= chunk.data[i + ChunkSize].height > SeaLevel ? 1 : 0;
+                else
+                {
+                    auto chunkId = chunk.getIndex();
+                    index |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x, chunkId.y* ChunkSize + y + 1) > SeaLevel ? 1 : 0;
+                }
+                
+                static const sf::Vector2f tileGfxSize(16.f, 16.f);
+                static const std::array<sf::Vector2f,16> texCoords
+                { {
+                    { 51.f,17.f },
+                    { 17.f,17.f },
+                    { 0.f,17.f },
+                    { 51.f,34.f },
+                    { 0.f,34.f },
+                    { 0.f,0.f }, // err...
+                    { 68.f,17.f },
+                    { 68.f,34.f },
+                    { 17.f,34.f },
+                    { 34.f,17.f },
+                    { 0.f,0.f }, // err..
+                    { 34.f,34.f },
+                    { 51.f,0.f },
+                    { 34.f,0.f },
+                    { 68.f,0.f },
+                    { 85.f,17.f },
+
+                } };
+                /*if (chunk.data[i].test(IS_LAND))
+                    index = 15;
+                else
+                    index = 0;*/
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texCoords[index] }); // top left
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize }, { texCoords[index].x + tileGfxSize.x, texCoords[index].y} }); // top right
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texCoords[index] + tileGfxSize }); // bottom right
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texCoords[index].x, texCoords[index].y + tileGfxSize.y } }); // bottom left
             }
     }
     m_drawList[ent.getIndex()].verts = verts;
