@@ -25,6 +25,7 @@ private:
 
     xy::Scene m_scene;
     xy::TextureResource m_textures;
+    xy::FontResource m_fonts;
 
     xy::Entity m_player;
 };

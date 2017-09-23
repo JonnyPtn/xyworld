@@ -3,26 +3,39 @@
 #include <array>
 #include <unordered_map>
 #include <xyginext/ecs/System.hpp>
+#include <xyginext/resources/Resource.hpp>
 
 #include "FastNoise.h"
+#include "TerrainChunk.hpp"
 
 class TerrainRenderer : public xy::System, public sf::Drawable
 {
 public:
-    TerrainRenderer(xy::MessageBus&, xy::Scene& scene);
+    TerrainRenderer(xy::MessageBus&);
     void process(float) override;
 
 private:
 
-    xy::Scene& m_scene;
+    // Use this to cache bounds as it's pretty inefficient calculating
+    struct ChunkData
+    {
+        sf::VertexArray verts;
+        sf::FloatRect bounds;
+    };
 
     // One vert array per chunk
-    std::unordered_map<xy::Entity::ID,sf::VertexArray> m_drawList;
+    std::unordered_map<xy::Entity::ID,ChunkData> m_drawList;
 
     void onEntityAdded(xy::Entity) override;
     void onEntityRemoved(xy::Entity) override;
 
     void draw(sf::RenderTarget&, sf::RenderStates) const override;
 
+    xy::Entity addChunk(sf::Vector2i index);
+
     FastNoise m_noise;
+
+    sf::Texture* m_sheetTexture;
+    xy::TextureResource m_textures;
+    xy::Entity m_currentChunk; // The current "center" chunk
 };

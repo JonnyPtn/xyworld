@@ -4,9 +4,9 @@
 
 #include "FastNoise.h"
 
-constexpr int ChunkSize(64); 
+constexpr int ChunkSize(128); 
 constexpr int TileCount(ChunkSize*ChunkSize);
-constexpr int TileSize(16.f); // tile size in pixels
+constexpr int TileSize(4.f); // tile size in pixels
 
 struct TerrainChunk
 {
@@ -14,13 +14,14 @@ struct TerrainChunk
         data{ {0u} }
     {};
 
-    void generate(FastNoise& noise)
+    void generate(FastNoise& noise, sf::Vector2i index)
     {
+        m_index = index;
         for (int x(0); x < ChunkSize; x++)
         {
             for (int y(0); y < ChunkSize; y++)
             {
-                auto n = noise.GetSimplexFractal(pos.x + x, pos.y +  y);
+                auto n = noise.GetSimplexFractal(index.x * ChunkSize + x, index.y * ChunkSize +  y);
 
                 // Some random values for different tile types
                 if ( n > 0.5 ) 
@@ -32,6 +33,11 @@ struct TerrainChunk
             }
         }   
     }
+
+    sf::Vector2i getIndex() const { return m_index; };
+
     std::array<std::uint16_t, TileCount> data;
-    sf::Vector2i pos;
+
+private:
+    sf::Vector2i m_index;
 };

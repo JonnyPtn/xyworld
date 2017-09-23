@@ -66,21 +66,30 @@ WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     m_scene(ctx.appInstance.getMessageBus()),
     m_textures()
 {
+
+    ctx.renderWindow.setKeyRepeatEnabled(true);
     
     // Load the player spritesheet
     auto& sheet = m_textures.get("assets/spritesheets/roguelikeChar_transparent.png");
+    auto& font = m_fonts.get("assets/ken_fonts/kenpixel.ttf");
 
-    m_scene.addSystem<TerrainRenderer>(ctx.appInstance.getMessageBus(), m_scene);
-    m_scene.addSystem<xy::SpriteRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::CameraSystem>(ctx.appInstance.getMessageBus());
+    m_scene.addSystem<TerrainRenderer>(ctx.appInstance.getMessageBus());
+    m_scene.addSystem<xy::SpriteRenderer>(ctx.appInstance.getMessageBus());
+    m_scene.addSystem<xy::TextRenderer>(ctx.appInstance.getMessageBus());
 
     // Player entity
     m_player = m_scene.createEntity();
     m_player.addComponent<xy::Transform>();
     m_player.addComponent<xy::Sprite>().setTexture(sheet);
     m_player.getComponent<xy::Sprite>().setTextureRect({ 0, 0, 16, 16 });
-    m_player.addComponent<xy::Camera>().setZoom(5.f);
-    m_scene.setActiveCamera(m_player);
+
+    // Camera entity
+    auto cam = m_scene.createEntity();
+    cam.addComponent<xy::Transform>().setPosition(8, 8);
+    m_player.getComponent<xy::Transform>().addChild(cam.getComponent<xy::Transform>());
+    cam.addComponent<xy::Camera>().setZoom(5.f);
+    m_scene.setActiveCamera(cam);
 }
 
 //public
@@ -88,7 +97,7 @@ bool WorldState::handleEvent(const sf::Event& evt)
 {
     m_scene.forwardEvent(evt);
 
-    float speed(16.f);
+    float speed(64.f);
 
     if (evt.type == sf::Event::KeyPressed)
     {
@@ -110,10 +119,6 @@ bool WorldState::handleEvent(const sf::Event& evt)
             m_player.getComponent<xy::Transform>().move(speed,0);
             break;
         }
-        auto& c = m_player.getComponent<xy::Transform>();
-        auto pos = c.getPosition();
-        std::string newPos = "x=" + std::to_string(pos.x) + ", y=" + std::to_string(pos.y);
-        xy::Logger::log("New position: " + newPos, xy::Logger::Type::Info);
     }
     else if (evt.type == sf::Event::MouseWheelScrolled)
     {
