@@ -161,7 +161,7 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
                     int n = None;
 
                     // Top left
-                    if (i > ChunkSize)
+                    if (i % ChunkSize && i - ChunkSize > 0)
                         n |= chunk.data[i - 1 - ChunkSize].height > SeaLevel ? TL : 0;
                     else
                         n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x - 1, chunkId.y* ChunkSize + y - 1) > SeaLevel ? TL : 0;
