@@ -7,6 +7,7 @@
 #include <xyginext/ecs/components/Camera.hpp>
 #include <xyginext/ecs/components/Transform.hpp>
 #include <xyginext/util/Vector.hpp>
+#include <xyginext/util/Random.hpp>
 
 // Draw distance (radius from camera, in world units)
 constexpr float DrawDistance(3500.f);
@@ -105,7 +106,8 @@ void TerrainRenderer::process(float dt)
         if (xy::Util::Vector::length(chunkPos - pos) > DrawDistance)
         {
             getScene()->destroyEntity(ent);
-            xy::Logger::log("Chunk removed");
+            auto pos = ent.getComponent<TerrainChunk>().getIndex();
+            xy::Logger::log("Chunk removed at " + std::to_string(pos.x) + "," + std::to_string(pos.y));
         }
     }
 
@@ -116,6 +118,7 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
     // Gather the tile data from this chunk and create verts for it
     auto chunk = ent.getComponent<TerrainChunk>();
     auto pos = ent.getComponent<xy::Transform>().getPosition();
+    auto chunkId = chunk.getIndex();
 
     sf::VertexArray verts(sf::PrimitiveType::Quads);
 
@@ -124,71 +127,133 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
         for (int x(0); x < ChunkSize; x++)
         {
                 auto i = y * ChunkSize + x;
-                // Vague hacky marching squares?
-                uint8_t index(0);
-                
-                // Top left
-                index |= chunk.data[i].height > SeaLevel ? 1 : 0;
-                index <<= 1;
+                sf::Vector2f texPos;
 
-                // Top Right
-                if ((i + 1) % ChunkSize)
-                    index |= chunk.data[i + 1].height > SeaLevel ? 1 : 0;
+                // Check if it's land tile first
+                if (chunk.data[i].height > SeaLevel)
+                {
+                    // Pick one of the random land tiles
+                    const std::vector<sf::Vector2f> landTiles =
+                    {
+                        {85.f,0.f},
+                        {85.f,17.f}
+                    };
+                    auto selection = xy::Util::Random::value(0, landTiles.size() - 1);
+                    texPos = landTiles[selection];
+                }
+                // the rest is sea -  check the for boundaries and select the right graphic
                 else
                 {
-                    auto chunkId = chunk.getIndex();
-                    index |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x + 1, chunkId.y* ChunkSize + y) > SeaLevel ? 1 : 0;
-                }
-                index <<= 1;
 
-                // Bottom Right
-                if ((i + 1) % ChunkSize && i < TileCount - ChunkSize)
-                    index |= chunk.data[i + 1 + ChunkSize].height > SeaLevel ? 1 : 0;
-                else
-                {
-                    auto chunkId = chunk.getIndex();
-                    index |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x + 1, chunkId.y* ChunkSize + y + 1) > SeaLevel ? 1 : 0;
-                }
-                index <<= 1;
+                    enum Neighbours
+                    {
+                        None,
+                        TL,
+                        T = 1 << 1,
+                        TR = 1 << 2,
+                        R = 1 << 3,
+                        BR = 1 << 4,
+                        B = 1 << 5,
+                        BL = 1 << 6,
+                        L = 1 << 7,
+                    };
 
-                // Bottom Left
-                if (i + ChunkSize < TileCount)
-                    index |= chunk.data[i + ChunkSize].height > SeaLevel ? 1 : 0;
-                else
-                {
-                    auto chunkId = chunk.getIndex();
-                    index |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x, chunkId.y* ChunkSize + y + 1) > SeaLevel ? 1 : 0;
-                }
-                
-                static const sf::Vector2f tileGfxSize(16.f, 16.f);
-                static const std::array<sf::Vector2f,16> texCoords
-                { {
-                    { 51.f,17.f },
-                    { 17.f,17.f },
-                    { 0.f,17.f },
-                    { 51.f,34.f },
-                    { 0.f,34.f },
-                    { 0.f,0.f }, // err...
-                    { 68.f,17.f },
-                    { 68.f,34.f },
-                    { 17.f,34.f },
-                    { 34.f,17.f },
-                    { 0.f,0.f }, // err..
-                    { 34.f,34.f },
-                    { 51.f,0.f },
-                    { 34.f,0.f },
-                    { 68.f,0.f },
-                    { 85.f,17.f },
+                    int n = None;
 
-                } };
-                /*if (chunk.data[i].test(IS_LAND))
-                    index = 15;
-                else
-                    index = 0;*/
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texCoords[index] }); // top left
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize }, { texCoords[index].x + tileGfxSize.x, texCoords[index].y} }); // top right
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texCoords[index] + tileGfxSize }); // bottom right
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texCoords[index].x, texCoords[index].y + tileGfxSize.y } }); // bottom left
+                    // Top left
+                    if (i > ChunkSize)
+                        n |= chunk.data[i - 1 - ChunkSize].height > SeaLevel ? TL : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x - 1, chunkId.y* ChunkSize + y - 1) > SeaLevel ? TL : 0;
+
+                    // Top
+                    if (i - ChunkSize > 0)
+                        n |= chunk.data[i - ChunkSize].height > SeaLevel ? T : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x, chunkId.y* ChunkSize + y - 1) > SeaLevel ? T : 0;
+
+                    // Top Right
+                    if ((i + 1 - ChunkSize) > 0 && (i + 1 - ChunkSize) % ChunkSize)
+                        n |= chunk.data[i + 1 - ChunkSize].height > SeaLevel ? TR : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x + 1, chunkId.y* ChunkSize + y - 1) > SeaLevel ? TR : 0;
+
+                    // Right
+                    if (i + 1 < TileCount && (i + 1) % ChunkSize)
+                        n |= chunk.data[i + 1].height > SeaLevel ? R : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x + 1, chunkId.y* ChunkSize + y) > SeaLevel ? R : 0;
+
+                    // Bottom Right
+                    if ((i + 1) % ChunkSize && i < TileCount - ChunkSize)
+                        n |= chunk.data[i + 1 + ChunkSize].height > SeaLevel ? BR : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x + 1, chunkId.y* ChunkSize + y + 1) > SeaLevel ? BR : 0;
+
+                    // Bottom
+                    if (i + ChunkSize < TileCount)
+                        n |= chunk.data[i + ChunkSize].height > SeaLevel ? B : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x, chunkId.y* ChunkSize + y + 1) > SeaLevel ? B : 0;
+
+                    // Bottom Left
+                    if (i + ChunkSize < TileCount &&  i % ChunkSize)
+                        n |= chunk.data[i + ChunkSize - 1].height > SeaLevel ? BL : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x - 1, chunkId.y* ChunkSize + y + 1) > SeaLevel ? BL : 0;
+
+                    // Left
+                    if (i % ChunkSize)
+                        n |= chunk.data[i - 1].height > SeaLevel ? L : 0;
+                    else
+                        n |= m_noise.GetSimplexFractal(chunkId.x* ChunkSize + x - 1, chunkId.y* ChunkSize + y) > SeaLevel ? L : 0;
+
+                    if (!n)
+                    {
+                        // Completely surrounded by sea, pick a random sea tile
+                        std::vector<sf::Vector2f> seaTexPos =
+                        {
+                            {51,17},
+                            {0,0},
+                            {17,0},
+                            {51,68}
+                        };
+                        auto selection = xy::Util::Random::value(0, seaTexPos.size() - 1);
+                        texPos = seaTexPos[selection];
+                    }
+
+                    else if (n == TL)
+                        texPos = { 17,34 };
+                    else if (n == TR)
+                        texPos = { 0,34 };
+                    else if (n == BL)
+                        texPos = { 17,17 };
+                    else if (n == BR)
+                        texPos = { 0,17 };
+
+                    else if ((n & (L | T)) == (L | T))
+                        texPos = { 34, 0 };
+                    else if ((n & (R | T)) == (R | T))
+                        texPos = { 68, 0 };
+                    else if ((n & (R | B)) == (R | B))
+                        texPos = { 68, 34 };
+                    else if ((n & (L | B)) == (L | B))
+                        texPos = { 34, 34 };
+
+                    else if (n & L)
+                        texPos = { 34, 17 };
+                    else if (n & R)
+                        texPos = { 68, 17 };
+                    else if (n & T)
+                        texPos = { 51, 0 };
+                    else if (n & B)
+                        texPos = { 51, 34 };
+                }
+                const sf::Vector2f tileGfxSize(16.f, 16.f);
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texPos }); // top left
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize }, { texPos.x + tileGfxSize.x, texPos.y} }); // top right
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
             }
     }
     m_drawList[ent.getIndex()].verts = verts;
@@ -213,7 +278,7 @@ void TerrainRenderer::draw(sf::RenderTarget& rt, sf::RenderStates states) const
 
 xy::Entity TerrainRenderer::addChunk(sf::Vector2i index)
 {
-    xy::Logger::log("Adding chunk");
+    xy::Logger::log("Adding chunk at " + std::to_string(index.x) + "," + std::to_string(index.y));
     auto newChunk = getScene()->createEntity();
     newChunk.addComponent<TerrainChunk>().generate(m_noise, index);
     newChunk.addComponent<xy::Transform>().setPosition(sf::Vector2f( index.x * TileSize * ChunkSize, index.y * TileSize * ChunkSize  ));

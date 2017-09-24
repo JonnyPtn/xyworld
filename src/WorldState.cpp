@@ -60,6 +60,8 @@ source distribution.
 
 #include "TerrainChunk.hpp"
 #include "TerrainRenderer.hpp"
+#include "Physics.hpp"
+#include "Velocity.hpp"
 
 WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     : xy::State(stack, ctx),
@@ -77,6 +79,7 @@ WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     m_scene.addSystem<TerrainRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::SpriteRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::TextRenderer>(ctx.appInstance.getMessageBus());
+    m_scene.addSystem<Physics>(ctx.appInstance.getMessageBus());
 
     // Player entity
     m_player = m_scene.createEntity();
@@ -88,7 +91,7 @@ WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     auto cam = m_scene.createEntity();
     cam.addComponent<xy::Transform>().setPosition(8, 8);
     m_player.getComponent<xy::Transform>().addChild(cam.getComponent<xy::Transform>());
-    cam.addComponent<xy::Camera>().setZoom(5.f);
+    cam.addComponent<xy::Camera>().zoom(5.f);
     m_scene.setActiveCamera(cam);
 }
 
@@ -126,11 +129,11 @@ bool WorldState::handleEvent(const sf::Event& evt)
         auto& cam = m_scene.getActiveCamera().getComponent<xy::Camera>();
         if (scroll > 0)
         {
-            cam.setZoom(1.1);
+            cam.zoom(1.1);
         }
         else
         {
-            cam.setZoom(0.9);
+            cam.zoom(0.9);
         }
     }
     return false;

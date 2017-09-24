@@ -4,4 +4,6 @@ set(PROJECT_SRC ${PROJECT_SRC}
   ${PROJECT_DIR}/../include/WorldState.hpp
     ${PROJECT_DIR}/../include/TerrainChunk.hpp
       ${PROJECT_DIR}/../include/TerrainRenderer.hpp
-      ${PROJECT_DIR}/../include/FastNoise.h)
+      ${PROJECT_DIR}/../include/FastNoise.h
+      ${PROJECT_DIR}/../include/Velocity.hpp
+      ${PROJECT_DIR}/../include/Physics.hpp)
