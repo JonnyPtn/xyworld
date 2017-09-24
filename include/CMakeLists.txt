@@ -1,9 +1,10 @@
-#add source files used by your project here
-set(PROJECT_SRC ${PROJECT_SRC}
-  ${PROJECT_DIR}/../include/Game.hpp
-  ${PROJECT_DIR}/../include/WorldState.hpp
-    ${PROJECT_DIR}/../include/TerrainChunk.hpp
-      ${PROJECT_DIR}/../include/TerrainRenderer.hpp
-      ${PROJECT_DIR}/../include/FastNoise.h
-      ${PROJECT_DIR}/../include/Velocity.hpp
-      ${PROJECT_DIR}/../include/Physics.hpp)
+set(PROJECT_SRC 
+  ${PROJECT_SRC}
+  ${CMAKE_CURRENT_SOURCE_DIR}/Game.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/WorldState.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TerrainChunk.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TerrainRenderer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/FastNoise.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Velocity.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Physics.hpp 
+  PARENT_SCOPE)

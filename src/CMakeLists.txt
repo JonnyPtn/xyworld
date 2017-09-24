@@ -1,8 +1,9 @@
-#add source files used by your project here
-set(PROJECT_SRC ${PROJECT_SRC}
-  ${PROJECT_DIR}/Game.cpp
-  ${PROJECT_DIR}/main.cpp
-  ${PROJECT_DIR}/WorldState.cpp
-  ${PROJECT_DIR}/TerrainRenderer.cpp
-   ${PROJECT_DIR}/FastNoise.cpp
-   ${PROJECT_DIR}/Physics.cpp)
+set(PROJECT_SRC 
+  ${PROJECT_SRC}
+  ${CMAKE_CURRENT_SOURCE_DIR}/Game.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/WorldState.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TerrainRenderer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/FastNoise.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Physics.cpp 
+  ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp 
+  PARENT_SCOPE)
