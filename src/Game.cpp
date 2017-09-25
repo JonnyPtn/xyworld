@@ -65,8 +65,6 @@ void Game::initialise()
 {
     registerStates();
     m_stateStack.pushState(States::WorldPlayState);
-
-    getRenderWindow().setKeyRepeatEnabled(false);
 }
 
 void Game::finalise()

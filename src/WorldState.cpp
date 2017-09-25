@@ -63,19 +63,24 @@ source distribution.
 #include "Physics.hpp"
 #include "Velocity.hpp"
 
+#include "Input.hpp"
+#include "Commands.hpp"
+
 WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     : xy::State(stack, ctx),
     m_scene(ctx.appInstance.getMessageBus()),
     m_textures()
-{
+{    
+    ctx.renderWindow.setKeyRepeatEnabled(false);
 
-    ctx.renderWindow.setKeyRepeatEnabled(true);
-    
     // Load the player spritesheet
     auto& sheet = m_textures.get("assets/spritesheets/roguelikeChar_transparent.png");
     auto& font = m_fonts.get("assets/ken_fonts/kenpixel.ttf");
 
+    m_scene.addDirector<InputDirector>();
+
     m_scene.addSystem<xy::CameraSystem>(ctx.appInstance.getMessageBus());
+    m_scene.addSystem<xy::CommandSystem>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<TerrainRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::SpriteRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::TextRenderer>(ctx.appInstance.getMessageBus());
@@ -86,6 +91,7 @@ WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     m_player.addComponent<xy::Transform>();
     m_player.addComponent<xy::Sprite>().setTexture(sheet);
     m_player.getComponent<xy::Sprite>().setTextureRect({ 0, 0, 16, 16 });
+    m_player.addComponent<xy::CommandTarget>().ID = PlayerOne;
 
     // Camera entity
     auto cam = m_scene.createEntity();
@@ -100,30 +106,7 @@ bool WorldState::handleEvent(const sf::Event& evt)
 {
     m_scene.forwardEvent(evt);
 
-    float speed(64.f);
-
-    if (evt.type == sf::Event::KeyPressed)
-    {
-        switch (evt.key.code)
-        {
-        case sf::Keyboard::W:
-            m_player.getComponent<xy::Transform>().move(0, -speed);
-            break;
-
-        case sf::Keyboard::A:
-            m_player.getComponent<xy::Transform>().move(-speed,0);
-            break;
-
-        case sf::Keyboard::S:
-            m_player.getComponent<xy::Transform>().move(0, speed);
-            break;
-
-        case sf::Keyboard::D:
-            m_player.getComponent<xy::Transform>().move(speed,0);
-            break;
-        }
-    }
-    else if (evt.type == sf::Event::MouseWheelScrolled)
+    if (evt.type == sf::Event::MouseWheelScrolled)
     {
         auto scroll = evt.mouseWheelScroll.delta;
         auto& cam = m_scene.getActiveCamera().getComponent<xy::Camera>();
