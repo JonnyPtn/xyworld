@@ -274,6 +274,15 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
                         verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
                         verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
                     }
+                    if ((n & (R | T | B)) == (R | T | B))
+                    {
+                        texPos = { 76,42 };
+                        tileGfxSize = { 8,8 };
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize / 2 }, texPos }); // top left
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize / 2 },{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+                    }
 
 
                     // Corner bits
