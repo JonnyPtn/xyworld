@@ -140,6 +140,12 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
                     };
                     auto selection = xy::Util::Random::value(0, landTiles.size() - 1);
                     texPos = landTiles[selection];
+                    sf::Vector2f tileGfxSize(16.f, 16.f);
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texPos }); // top left
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize },{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+
                 }
                 // the rest is sea -  check the for boundaries and select the right graphic
                 else
@@ -222,15 +228,6 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
                         texPos = seaTexPos[selection];
                     }
 
-                    else if (n == TL)
-                        texPos = { 17,34 };
-                    else if (n == TR)
-                        texPos = { 0,34 };
-                    else if (n == BL)
-                        texPos = { 17,17 };
-                    else if (n == BR)
-                        texPos = { 0,17 };
-
                     else if ((n & (L | T)) == (L | T))
                         texPos = { 34, 0 };
                     else if ((n & (R | T)) == (R | T))
@@ -248,12 +245,76 @@ void TerrainRenderer::onEntityAdded(xy::Entity ent)
                         texPos = { 51, 0 };
                     else if (n & B)
                         texPos = { 51, 34 };
+
+                    sf::Vector2f tileGfxSize(16.f, 16.f);
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texPos }); // top left
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize }, { texPos.x + tileGfxSize.x, texPos.y} }); // top right
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                    verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+
+                    // Patch over some bits because we don't have tiles for them
+                    //
+
+                    if ((n & (L | T | R)) == (L | T | R))
+                    {
+                        texPos = { 76,0 };
+                        tileGfxSize = { 8,16 };
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize }, texPos }); // top left
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize },{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+                    }
+
+                    if ((n & (L | T | B)) == (L | T | B))
+                    {
+                        texPos = { 34,41 };
+                        tileGfxSize = { 16,8 };
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize / 2 }, texPos }); // top left
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize / 2 },{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+                    }
+
+
+                    // Corner bits
+                    tileGfxSize = { 8,8 };
+                    if ((n & TL) == TL && !(n & (T | L)))
+                    {
+                        texPos = { 17,34 };
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texPos }); // top left
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize},{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize/2 },texPos + tileGfxSize }); // bottom right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize/2 },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+
+                    }
+                    if ((n & TR) == TR && !(n & (T | R)))
+                    {
+                        texPos = { 8,34 };
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize }, texPos }); // top left
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize},{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize /2 },texPos + tileGfxSize }); // bottom right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize/2 },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+
+                    }
+                    if ((n & BL) == BL && !(n & (B | L)))
+                    {
+                        texPos = { 17,25 };
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize / 2 }, texPos }); // top left
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize / 2 },{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+
+                    }
+                    if ((n & BR) == BR && !(n & (B | R)))
+                    {
+                        texPos = { 8,25 };
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize / 2 }, texPos }); // top left
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize / 2 },{ texPos.x + tileGfxSize.x, texPos.y } }); // top right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
+                        verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize/2, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
+
+                    }
                 }
-                const sf::Vector2f tileGfxSize(16.f, 16.f);
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize }, texPos }); // top left
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize }, { texPos.x + tileGfxSize.x, texPos.y} }); // top right
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize + TileSize, pos.y + y * TileSize + TileSize },texPos + tileGfxSize }); // bottom right
-                verts.append({ sf::Vector2f{ pos.x + x * TileSize, pos.y + y * TileSize + TileSize },{ texPos.x, texPos.y + tileGfxSize.y } }); // bottom left
             }
     }
     m_drawList[ent.getIndex()].verts = verts;

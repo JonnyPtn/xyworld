@@ -2,8 +2,9 @@
 
 #include <xyginext/ecs/System.hpp>
 
-class GeorgeAnimator : public xy::System
+class George : public xy::System
 {
 public:
-  //  GeorgeAnimator(xy::MessageBus& mb) : xy::System(mb, typeid(George)) {}
+    George(xy::MessageBus& mb) : xy::System(mb, typeid(George)) {}
+    void process(float) override;
 };

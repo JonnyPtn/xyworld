@@ -6,54 +6,18 @@
 #include <xyginext/ecs/components/SpriteAnimation.hpp>
 
 #include "Commands.hpp"
+#include <xyginext/util/Vector.hpp>
 
 void InputDirector::handleEvent(const sf::Event& ev)
 {
     // The input struct, to be sent out in a command to interested Entities
     if (ev.type == sf::Event::KeyPressed)
     {
-        // For keyboard presses, assume player one
-        auto& i = m_playerInput[0];
-        switch (ev.key.code)
-        {
-        case sf::Keyboard::W:
-            i.xy.y = -1.f;
-            break;
-
-        case sf::Keyboard::S:
-            i.xy.y = 1.f;
-            break;
-
-        case sf::Keyboard::A:
-            i.xy.x = -1.f;
-            break;
-            
-        case sf::Keyboard::D:
-            i.xy.x = 1.f;
-        }
-
+        m_pressedKeys.insert(ev.key.code);
     }
     else if (ev.type == sf::Event::KeyReleased)
     {
-        // For keyboard presses, assume player one
-        auto& i = m_playerInput[0];
-        switch (ev.key.code)
-        {
-        case sf::Keyboard::W:
-            i.xy.y += 1.f;
-            break;
-
-        case sf::Keyboard::S:
-            i.xy.y -= 1.f;
-            break;
-
-        case sf::Keyboard::A:
-            i.xy.x += 1.f;
-            break;
-
-        case sf::Keyboard::D:
-            i.xy.x -= 1.f;
-        }
+        m_pressedKeys.erase(ev.key.code);
     }
     else if (ev.type == sf::Event::JoystickMoved)
     {
@@ -87,11 +51,12 @@ void InputDirector::process(float dt)
            
             // basic crappy dead zone
             const float DZ(0.2f);
-            float dx(0.f), dy(0.f);
-            if (std::fabs(i.xy.x) > DZ)
-                dx = i.xy.x;
-            if (std::fabs(i.xy.y) > DZ)
-                dy = i.xy.y;
+            if (std::fabs(xy::Util::Vector::length(i.xy)) < DZ)
+                i.xy = { 0,0 };
+
+            xy::Logger::log("movement = " + std::to_string(i.xy.x) + " " + std::to_string(i.xy.y));
+            //execute move
+            t.move(i.xy);
 
             // Probably shouldn't be doing this here
             // Update animation based on movement
@@ -99,6 +64,13 @@ void InputDirector::process(float dt)
 
             static int currentAnim;
             int animId(-1);
+
+            //hacky...
+            float dx(i.xy.x), dy(i.xy.y);
+            if (std::fabs(i.xy.x) > std::fabs(i.xy.y))
+                dy = 0.f;
+            else
+                dx = 0.f;
 
             // Down
             if (dy > 0.f)
@@ -124,14 +96,18 @@ void InputDirector::process(float dt)
                     currentAnim = animId;
                     a.play(animId);
                 }
+                a.play(animId);
             }
             else
             {
-                a.stop();
+                a.pause();
             }
-
-            //execute move
-            t.move(dx, dy);
+            
+            // Force it to int position to prevent artifacts
+            auto pos = t.getPosition();
+            pos.x = std::round(pos.x);
+            pos.y = std::round(pos.y);
+            t.setPosition(pos);
         };
 
         getScene().getSystem<xy::CommandSystem>().sendCommand(cmd);
