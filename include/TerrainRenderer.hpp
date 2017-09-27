@@ -14,6 +14,12 @@ public:
     TerrainRenderer(xy::MessageBus&);
     void process(float) override;
 
+    // Probably the wrong place for this...
+    bool isLand(sf::Vector2f worldPos)
+    {
+        return m_noise.GetSimplexFractal(worldPos.x / TileSize, worldPos.y / TileSize) > SeaLevel;
+    }
+
 private:
 
     // Use this to cache bounds as it's pretty inefficient calculating

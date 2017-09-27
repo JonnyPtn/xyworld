@@ -4,6 +4,7 @@
 #include <xyginext/ecs/Scene.hpp>
 #include <xyginext/ecs/components/Sprite.hpp>
 #include <xyginext/resources/Resource.hpp>
+#include <xyginext/graphics/SpriteSheet.hpp>
 
 #include "States.hpp"
 

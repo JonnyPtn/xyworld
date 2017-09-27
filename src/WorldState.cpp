@@ -83,14 +83,19 @@ WorldState::WorldState(xy::StateStack& stack, xy::State::Context ctx)
     m_scene.addSystem<xy::CommandSystem>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<TerrainRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::SpriteRenderer>(ctx.appInstance.getMessageBus());
+    m_scene.addSystem<xy::SpriteAnimator>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<xy::TextRenderer>(ctx.appInstance.getMessageBus());
     m_scene.addSystem<Physics>(ctx.appInstance.getMessageBus());
 
     // Player entity
+    xy::SpriteSheet ss;
+    ss.loadFromFile("assets/spritesheets/george.spt", m_textures);
     m_player = m_scene.createEntity();
-    m_player.addComponent<xy::Transform>();
-    m_player.addComponent<xy::Sprite>().setTexture(sheet);
-    m_player.getComponent<xy::Sprite>().setTextureRect({ 0, 0, 16, 16 });
+
+    // George is 48px tall, but our tiles are 16x16
+    m_player.addComponent<xy::Transform>().setScale(1.f / 3.f, 1.f / 3.f);
+    m_player.addComponent<xy::Sprite>() = ss.getSprite("george");
+    m_player.addComponent<xy::SpriteAnimation>();
     m_player.addComponent<xy::CommandTarget>().ID = PlayerOne;
 
     // Camera entity

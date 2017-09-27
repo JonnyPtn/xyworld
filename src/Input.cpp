@@ -2,6 +2,8 @@
 #include <xyginext/ecs/Scene.hpp>
 #include <SFML/Window/Event.hpp>
 #include <xyginext/ecs/components/Transform.hpp>
+#include <xyginext/ecs/components/Sprite.hpp>
+#include <xyginext/ecs/components/SpriteAnimation.hpp>
 
 #include "Commands.hpp"
 
@@ -15,20 +17,21 @@ void InputDirector::handleEvent(const sf::Event& ev)
         switch (ev.key.code)
         {
         case sf::Keyboard::W:
-            i.xy.y -= 1.f;
+            i.xy.y = -1.f;
             break;
 
         case sf::Keyboard::S:
-            i.xy.y += 1.f;
+            i.xy.y = 1.f;
             break;
 
         case sf::Keyboard::A:
-            i.xy.x -= 1.f;
+            i.xy.x = -1.f;
             break;
             
         case sf::Keyboard::D:
-            i.xy.x += 1.f;
+            i.xy.x = 1.f;
         }
+
     }
     else if (ev.type == sf::Event::KeyReleased)
     {
@@ -82,8 +85,53 @@ void InputDirector::process(float dt)
         {
             auto& t = e.getComponent<xy::Transform>();
            
-            t.move(i.xy);
-           
+            // basic crappy dead zone
+            const float DZ(0.2f);
+            float dx(0.f), dy(0.f);
+            if (std::fabs(i.xy.x) > DZ)
+                dx = i.xy.x;
+            if (std::fabs(i.xy.y) > DZ)
+                dy = i.xy.y;
+
+            // Probably shouldn't be doing this here
+            // Update animation based on movement
+            auto& a = e.getComponent<xy::SpriteAnimation>();
+
+            static int currentAnim;
+            int animId(-1);
+
+            // Down
+            if (dy > 0.f)
+                animId = 0;
+            
+            // Left
+            if (dx < 0.f)
+                animId = 1;
+
+            // Up
+            if (dy < 0.f)
+                animId = 2;
+
+            // Right
+            if (dx > 0.f)
+                animId = 3;
+
+            if (animId > -1)
+            {
+                if (animId != currentAnim)
+                {
+                    a.stop();
+                    currentAnim = animId;
+                    a.play(animId);
+                }
+            }
+            else
+            {
+                a.stop();
+            }
+
+            //execute move
+            t.move(dx, dy);
         };
 
         getScene().getSystem<xy::CommandSystem>().sendCommand(cmd);

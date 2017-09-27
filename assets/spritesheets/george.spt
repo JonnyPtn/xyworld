@@ -1,0 +1,55 @@
+sprite_sheet player
+{
+	src = "assets/george.png"
+	blendmode = alpha
+
+	sprite george
+	{
+		bounds = 0,96,48,48
+
+		animation down
+		{
+			frame = 0,0,48,48
+			frame = 0,48,48,48
+			frame = 0,96,48,48
+			frame = 0,144,48,48
+
+			framerate = 4
+			loop = true
+		}
+
+		animation left
+		{
+			frame = 48,0,48,48
+			frame = 48,48,48,48
+			frame = 48,96,48,48
+			frame = 48,144,48,48
+
+			framerate = 4
+			loop = true
+		}
+
+		animation up
+		{
+			frame = 96,0,48,48
+			frame = 96,48,48,48
+			frame = 96,96,48,48
+			frame = 96,144,48,48
+
+			framerate = 4
+			loop = true
+		}
+
+		animation right
+		{
+			frame = 144,0,48,48
+			frame = 144,48,48,48
+			frame = 144,96,48,48
+			frame = 144,144,48,48
+
+			framerate = 4
+			loop = true
+		}
+
+	}
+}

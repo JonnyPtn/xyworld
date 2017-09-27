@@ -1,10 +1,13 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <SFML/Window/Keyboard.hpp>
 
 #include <xyginext/ecs/Director.hpp>
 
 #include <array>
+
+#include <set>
 
 struct InputData
 {
@@ -20,4 +23,6 @@ public:
 
 private:
     std::array<InputData,4> m_playerInput;
+
+    std::set<sf::Keyboard::Key> m_pressedKeys;
 };
